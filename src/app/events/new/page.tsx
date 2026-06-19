@@ -7,6 +7,7 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/lib/db";
 import { defaultConfig, uid, type EventConfig } from "@/lib/types";
 import { generateRounds } from "@/lib/tableGenerator";
+import { createEvent } from "@/lib/dataService";
 import ConfigEditor from "@/components/ConfigEditor";
 
 export default function NewEventPage() {
@@ -37,13 +38,7 @@ export default function NewEventPage() {
     if (!trimmed || selected.size < config.tableSize) return;
     setSubmitting(true);
     const id = uid();
-    await db.events.add({
-      id,
-      name: trimmed,
-      createdAt: Date.now(),
-      config,
-      playerIds: [...selected],
-    });
+    await createEvent(id, trimmed, config, [...selected]);
     await generateRounds(id, [...selected], config, numberOfRounds);
     setSubmitting(false);
     router.push(`/events/${id}`);

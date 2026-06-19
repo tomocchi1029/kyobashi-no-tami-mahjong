@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/lib/db";
-import { uid } from "@/lib/types";
+import { createPlayer, deletePlayer } from "@/lib/dataService";
 
 const MAX_PLAYERS = 30;
 
@@ -32,13 +32,13 @@ export default function PlayersPage() {
       alert(`選手は最大${MAX_PLAYERS}人までです。`);
       return;
     }
-    await db.players.add({ id: uid(), name: trimmed, createdAt: Date.now() });
+    await createPlayer(trimmed);
     setNewName("");
   }
 
   async function remove(id: string) {
     if (!confirm("この選手を削除しますか？過去の卓の記録には残ります。")) return;
-    await db.players.delete(id);
+    await deletePlayer(id);
   }
 
   return (

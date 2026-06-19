@@ -5,6 +5,7 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/lib/db";
 import { SEATS, type EventConfig, type MahjongEvent, type Player, type TableAssignment } from "@/lib/types";
 import { computeResults } from "@/lib/scoreCalculator";
+import { updateTableScores } from "@/lib/dataService";
 
 interface Props {
   event: MahjongEvent;
@@ -154,11 +155,12 @@ function ScoreInputSection({
 
   async function save() {
     if (!valid) return;
-    await db.gameTables.update(table.id, {
-      rawScores: allScoreValues,
-      chipCounts: parsedChips,
-      scoreEntered: true,
-    });
+    await updateTableScores(
+      table.id,
+      allScoreValues,
+      parsedChips,
+      true
+    );
     prevSig.current = allScoreValues.join(",") + "|" + parsedChips.join(",");
     setDirty(false);
   }

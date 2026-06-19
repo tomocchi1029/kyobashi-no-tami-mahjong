@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/lib/db";
 import type { EventConfig } from "@/lib/types";
+import { updateEventConfig } from "@/lib/dataService";
 import ConfigEditor from "@/components/ConfigEditor";
 
 export default function EventSettingsPage() {
@@ -34,7 +35,7 @@ export default function EventSettingsPage() {
 
   async function save() {
     if (!config) return;
-    await db.events.update(id, { config });
+    await updateEventConfig(id, config);
     setSaved(true);
     setTimeout(() => setSaved(false), 1500);
   }

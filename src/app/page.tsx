@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/lib/db";
+import { deleteEvent } from "@/lib/dataService";
 
 export default function EventsPage() {
   const events = useLiveQuery(() => db.events.orderBy("createdAt").reverse().toArray(), [], []);
@@ -23,10 +24,7 @@ export default function EventsPage() {
 
   async function deleteEvent(id: string) {
     if (!confirm("このイベントを削除しますか？関連する回戦・卓も削除されます。")) return;
-    const roundIds = (await db.rounds.where("eventId").equals(id).toArray()).map((r) => r.id);
-    await db.gameTables.where("roundId").anyOf(roundIds).delete();
-    await db.rounds.where("eventId").equals(id).delete();
-    await db.events.delete(id);
+    await deleteEvent(id);
   }
 
   return (

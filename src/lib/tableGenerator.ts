@@ -1,6 +1,7 @@
 import type { EventConfig, Round, TableAssignment } from "./types";
 import { uid } from "./types";
 import { db } from "./db";
+import { addRound, deleteRoundAndTables, replaceRoundTables } from "./dataService";
 
 type PairingCounts = Map<string, Map<string, number>>;
 
@@ -161,8 +162,7 @@ export async function generateRounds(
       restPlayerIds: rest,
     };
     const tableRecords = buildTableRecords(eventId, roundId, tables, config);
-    await db.rounds.add(round);
-    await db.gameTables.bulkAdd(tableRecords);
+    await addRound(round, tableRecords);
     for (const t of tableRecords) {
       updatePairingCounts(pairingCounts, t.playerIds);
     }
@@ -182,7 +182,7 @@ export async function regenerateRound(
     .where("roundId")
     .equals(roundId)
     .toArray();
-  await db.gameTables.bulkDelete(oldTables.map((t) => t.id));
+  const oldTableIds = oldTables.map((t) => t.id);
 
   const allTables = await db.gameTables
     .where("eventId")
@@ -195,8 +195,7 @@ export async function regenerateRound(
   const tableRecords = buildTableRecords(eventId, roundId, tables, config);
 
   round.restPlayerIds = rest;
-  await db.rounds.put(round);
-  await db.gameTables.bulkAdd(tableRecords);
+  await replaceRoundTables(round, oldTableIds, tableRecords);
 }
 
 export async function deleteRound(roundId: string): Promise<void> {
@@ -204,6 +203,6 @@ export async function deleteRound(roundId: string): Promise<void> {
     .where("roundId")
     .equals(roundId)
     .toArray();
-  await db.gameTables.bulkDelete(oldTables.map((t) => t.id));
-  await db.rounds.delete(roundId);
+  const oldTableIds = oldTables.map((t) => t.id);
+  await deleteRoundAndTables(roundId, oldTableIds);
 }
