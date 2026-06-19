@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import Nav from "@/components/Nav";
+import ClientLayout from "@/components/ClientLayout";
 
 export const metadata: Metadata = {
   title: "京橋の民セット麻雀記録ツール",
@@ -16,11 +16,7 @@ export default function RootLayout({
     <html lang="ja">
       <body>
         <div className="mx-auto flex min-h-screen max-w-3xl flex-col">
-          <Nav />
-          <main className="flex-1 px-4 pb-20 pt-4">{children}</main>
-          <footer className="px-4 pb-6 text-center text-xs text-stone-400">
-            京橋の民セット麻雀記録ツール ・ データはこの端末に保存されます
-          </footer>
+          <ClientLayout>{children}</ClientLayout>
         </div>
       </body>
     </html>
