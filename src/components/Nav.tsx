@@ -15,26 +15,30 @@ export default function Nav() {
     href === "/" ? pathname === "/" : pathname.startsWith(href);
 
   return (
-    <header className="sticky top-0 z-20 border-b border-stone-200 bg-white/90 backdrop-blur">
+    <header className="sticky top-0 z-20 border-b border-ink-200/60 bg-white/85 shadow-soft backdrop-blur-md">
       <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3">
-        <Link href="/" className="text-base font-bold tracking-tight">
-          🀄 京橋の民
+        <Link href="/" className="flex items-center gap-2 text-base font-extrabold tracking-tight text-ink-900">
+          <span className="text-xl">🀄</span>
+          <span>京橋の民</span>
         </Link>
         <nav className="flex items-center gap-1">
-          {ITEMS.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-                isActive(item.href)
-                  ? "bg-stone-900 text-white"
-                  : "text-stone-600 hover:bg-stone-100"
-              }`}
-            >
-              <span className="mr-1">{item.icon}</span>
-              <span className="hidden sm:inline">{item.label}</span>
-            </Link>
-          ))}
+          {ITEMS.map((item) => {
+            const active = isActive(item.href);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex min-h-[40px] items-center gap-1.5 rounded-full px-3 text-sm font-semibold transition-all ${
+                  active
+                    ? "bg-brand-600 text-white shadow-glow"
+                    : "text-ink-600 hover:bg-ink-100 active:scale-95"
+                }`}
+              >
+                <span aria-hidden>{item.icon}</span>
+                <span className="hidden sm:inline">{item.label}</span>
+              </Link>
+            );
+          })}
         </nav>
       </div>
     </header>

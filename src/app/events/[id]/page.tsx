@@ -45,13 +45,18 @@ export default function EventDetailPage() {
   useEffect(() => setMounted(true), []);
 
   if (!mounted || event === undefined) {
-    return <div className="py-10 text-center text-sm text-stone-400">読み込み中...</div>;
+    return (
+      <div className="py-16 text-center text-sm text-ink-400">読み込み中…</div>
+    );
   }
   if (!event) {
     return (
-      <div className="space-y-4 py-10 text-center">
-        <p className="text-sm text-stone-500">イベントが見つかりません。</p>
-        <button className="btn-secondary" onClick={() => router.push("/")}>
+      <div className="space-y-4 py-16 text-center">
+        <p className="text-sm text-ink-500">イベントが見つかりません。</p>
+        <button
+          className="btn-secondary mx-auto"
+          onClick={() => router.push("/")}
+        >
           一覧に戻る
         </button>
       </div>
@@ -68,37 +73,66 @@ export default function EventDetailPage() {
     return rtables.length > 0 && rtables.every((t) => t.scoreEntered);
   }).length;
   const scoredTables = tables.filter((t) => t.scoreEntered).length;
+  const totalTables = tables.length;
+  const progress = totalTables > 0 ? (scoredTables / totalTables) * 100 : 0;
 
   return (
     <div className="space-y-4">
-      <div className="space-y-1">
+      <div className="space-y-2">
         <div className="flex items-start justify-between gap-2">
-          <h1 className="text-lg font-bold">{event.name}</h1>
-          <Link href={`/events/${event.id}/settings`} className="btn-secondary shrink-0">
-            ⚙️ ルール
+          <h1 className="text-xl font-extrabold tracking-tight text-ink-900">
+            {event.name}
+          </h1>
+          <Link
+            href={`/events/${event.id}/settings`}
+            className="btn-secondary shrink-0 px-3 py-2"
+            aria-label="ルール設定"
+          >
+            ⚙️ <span className="hidden sm:inline">ルール</span>
           </Link>
         </div>
-        <p className="text-xs text-stone-500">
-          👥 {event.playerIds.length}人 ・ 🎲 {rounds.length}回戦中{completedRounds}完了 ・
-          卓 {scoredTables}/{tables.length}入力済
-        </p>
+        <div className="flex flex-wrap gap-1.5 text-[11px]">
+          <span className="chip">👥 {event.playerIds.length}人</span>
+          <span className="chip-brand">🎲 {rounds.length}回戦</span>
+          <span className="chip">
+            {scoredTables}/{totalTables}卓完了
+          </span>
+          {event.config.noRate ? (
+            <span className="chip-pos">ノーレート</span>
+          ) : (
+            <span className="chip">レート {event.config.rate}</span>
+          )}
+        </div>
+        {totalTables > 0 && (
+          <div className="h-1.5 overflow-hidden rounded-full bg-ink-100">
+            <div
+              className="h-full rounded-full bg-brand-500 transition-all duration-500"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        )}
       </div>
 
-      <div className="sticky top-[52px] z-10 -mx-1 flex gap-1 rounded-md bg-stone-100/80 p-1 backdrop-blur">
-        {TABS.map(([key, label, icon]) => (
-          <button
-            key={key}
-            onClick={() => setTab(key)}
-    className={`flex-1 rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${
-      tab === key
-        ? "bg-white text-stone-900 shadow-sm"
-        : "text-stone-500"
-    }`}
-          >
-            <span className="mr-0.5">{icon}</span>
-            {label}
-          </button>
-        ))}
+      <div className="sticky top-[60px] z-10 -mx-1 rounded-2xl bg-white/70 p-1 shadow-soft backdrop-blur-md">
+        <div className="flex gap-1">
+          {TABS.map(([key, label, icon]) => {
+            const active = tab === key;
+            return (
+              <button
+                key={key}
+                onClick={() => setTab(key)}
+                className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-sm font-bold transition-all active:scale-[0.97] ${
+                  active
+                    ? "bg-brand-600 text-white shadow-glow"
+                    : "text-ink-500 hover:bg-ink-100"
+                }`}
+              >
+                <span>{icon}</span>
+                {label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {tab === "tables" && (

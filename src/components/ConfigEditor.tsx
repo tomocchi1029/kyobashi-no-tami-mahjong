@@ -73,10 +73,10 @@ export default function ConfigEditor({ config, onChange }: Props) {
           max={100000}
           onChange={(v) => set({ returnPoints: v })}
         />
-        <div className="text-sm text-stone-500">
+        <div className="text-sm text-ink-600">
           オカ（1人あたり）: {okaPerPlayer(config)}
         </div>
-        <div className="text-xs text-stone-400">
+        <div className="text-xs text-ink-500">
           オカ合計（1位に加算）: {okaPerPlayer(config) * config.tableSize}
         </div>
       </section>
@@ -118,7 +118,7 @@ export default function ConfigEditor({ config, onChange }: Props) {
           />
         </label>
         {config.noRate && (
-          <p className="text-xs text-stone-400">
+          <p className="text-xs text-ink-500">
             ノーレートモードではレート・チップの設定と金額表示を省略し、マッチポイント（MP）のみで競います。
           </p>
         )}
@@ -146,7 +146,7 @@ export default function ConfigEditor({ config, onChange }: Props) {
               onChange={(e) => set({ chipValue: Number(e.target.value) })}
             />
           </div>
-          <div className="text-xs text-stone-400">
+          <div className="text-xs text-ink-500">
             計算例: MP 10 × レート {config.rate} = ¥{(10 * config.rate).toFixed(0)}
           </div>
         </section>

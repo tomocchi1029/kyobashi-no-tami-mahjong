@@ -47,11 +47,13 @@ export default function NewEventPage() {
   const canCreate = name.trim().length > 0 && selected.size >= config.tableSize;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 pb-32">
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-bold">イベント作成</h1>
-        <Link href="/" className="text-sm text-stone-500">
-          キャンセル
+        <h1 className="text-2xl font-extrabold tracking-tight text-ink-900">
+          新規イベント
+        </h1>
+        <Link href="/" className="btn-ghost px-3 py-2 text-sm">
+          ✕ キャンセル
         </Link>
       </div>
 
@@ -68,46 +70,54 @@ export default function NewEventPage() {
       <section className="card space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="section-title">
-            参加選手（{selected.size}人選択中）
+            参加選手 ({selected.size}/{players.length})
           </h2>
           <div className="flex gap-2">
             <button
-              className="text-xs text-stone-500 underline"
+              className="text-xs font-semibold text-brand-600 active:opacity-60"
               onClick={() => setSelected(new Set(players.map((p) => p.id)))}
             >
               全員選択
             </button>
+            <span className="text-ink-300">|</span>
             <button
-              className="text-xs text-stone-500 underline"
+              className="text-xs font-semibold text-ink-500 active:opacity-60"
               onClick={() => setSelected(new Set())}
             >
-              全員解除
+              解除
             </button>
           </div>
         </div>
         {players.length === 0 ? (
-          <p className="text-sm text-stone-500">
+          <div className="rounded-xl bg-amber-50 p-3 text-sm text-amber-800">
             選手が登録されていません。
-            <Link href="/players" className="text-stone-700 underline">
-              選手ページ
+            <Link href="/players" className="ml-1 font-bold underline">
+              選手ページ →
             </Link>
-            から先に登録してください。
-          </p>
+          </div>
         ) : (
-          <ul className="grid grid-cols-1 gap-1 sm:grid-cols-2">
+          <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {players.map((p) => {
               const on = selected.has(p.id);
               return (
                 <li key={p.id}>
                   <button
                     onClick={() => toggle(p.id)}
-                    className={`flex w-full items-center gap-2 rounded-md border px-3 py-2 text-left text-sm ${
+                    className={`flex w-full items-center gap-2 rounded-xl border px-3 py-2.5 text-left text-sm font-semibold transition-all active:scale-95 ${
                       on
-                        ? "border-stone-900 bg-stone-100"
-                        : "border-stone-200 bg-white"
+                        ? "border-brand-500 bg-brand-50 text-brand-800 ring-2 ring-brand-200"
+                        : "border-ink-200 bg-white text-ink-700"
                     }`}
                   >
-                    <span>{on ? "✅" : "⭕"}</span>
+                    <span
+                      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] ${
+                        on
+                          ? "bg-brand-600 text-white"
+                          : "border border-ink-300 text-transparent"
+                      }`}
+                    >
+                      ✓
+                    </span>
                     <span className="truncate">{p.name}</span>
                   </button>
                 </li>
@@ -115,22 +125,18 @@ export default function NewEventPage() {
             })}
           </ul>
         )}
-        <p className="text-xs text-stone-400">
-          最大30人まで登録可能（卓組は選択人数に応じて自動生成）。
-        </p>
       </section>
 
       <section className="card space-y-2">
-        <h2 className="section-title">回戦数</h2>
+        <h2 className="section-title">初回生成する回戦数</h2>
         <Stepper
-          label={`初回生成: ${numberOfRounds}回戦`}
           value={numberOfRounds}
           min={1}
           max={20}
           step={1}
           onChange={setNumberOfRounds}
         />
-        <p className="text-xs text-stone-400">後から卓組タブで追加できます。</p>
+        <p className="text-xs text-ink-500">後から卓組タブで追加できます</p>
       </section>
 
       <section className="space-y-3">
@@ -138,33 +144,33 @@ export default function NewEventPage() {
         <ConfigEditor config={config} onChange={setConfig} />
       </section>
 
-      <div className="sticky bottom-4">
-        <button
-          onClick={create}
-          disabled={!canCreate || submitting}
-          className="btn-primary w-full py-3 text-base shadow-lg"
-        >
-          {submitting ? "作成中..." : "イベントを作成"}
-        </button>
-        {!canCreate && (
-          <p className="mt-1 text-center text-xs text-stone-400">
-            イベント名と最低{config.tableSize}人の選手を選択してください。
-          </p>
-        )}
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-ink-200/60 bg-white/90 px-4 pb-[env(safe-area-inset-bottom,1rem)] pt-3 shadow-lift backdrop-blur-md">
+        <div className="mx-auto max-w-3xl">
+          <button
+            onClick={create}
+            disabled={!canCreate || submitting}
+            className="btn-primary w-full py-3.5 text-base"
+          >
+            {submitting ? "作成中..." : "イベントを作成"}
+          </button>
+          {!canCreate && (
+            <p className="mt-1 text-center text-[11px] text-ink-500">
+              イベント名と最低{config.tableSize}人の選手を選択してください
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
 function Stepper({
-  label,
   value,
   min,
   max,
   step,
   onChange,
 }: {
-  label: string;
   value: number;
   min: number;
   max: number;
@@ -173,14 +179,24 @@ function Stepper({
 }) {
   const clamp = (v: number) => Math.max(min, Math.min(max, v));
   return (
-    <div className="label-row">
-      <span>{label}</span>
+    <div className="flex items-center justify-between gap-3 py-2">
+      <span className="text-2xl font-extrabold tabular-nums text-ink-900">
+        {value}
+        <span className="ml-1 text-sm font-medium text-ink-500">回戦</span>
+      </span>
       <div className="flex items-center gap-1">
-        <button className="btn-secondary px-2.5" onClick={() => onChange(clamp(value - step))}>
+        <button
+          className="flex h-11 w-11 items-center justify-center rounded-full border border-ink-200 bg-white text-lg font-bold text-ink-600 active:scale-90 active:bg-ink-50"
+          onClick={() => onChange(clamp(value - step))}
+          aria-label="減らす"
+        >
           −
         </button>
-        <span className="w-10 text-center tabular-nums">{value}</span>
-        <button className="btn-secondary px-2.5" onClick={() => onChange(clamp(value + step))}>
+        <button
+          className="flex h-11 w-11 items-center justify-center rounded-full border border-ink-200 bg-white text-lg font-bold text-ink-600 active:scale-90 active:bg-ink-50"
+          onClick={() => onChange(clamp(value + step))}
+          aria-label="増やす"
+        >
           ＋
         </button>
       </div>

@@ -48,22 +48,25 @@ export default function RoundTablesView({ event, playersMap }: Props) {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <section className="card space-y-3">
-        <h2 className="section-title">回戦を追加</h2>
-        <div className="label-row">
-          <span>追加する回戦数: {numberOfRounds}</span>
+        <div className="flex items-center justify-between">
+          <h2 className="section-title">回戦を追加</h2>
           <div className="flex items-center gap-1">
             <button
-              className="btn-secondary px-2.5"
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-ink-200 bg-white text-lg font-bold text-ink-600 active:scale-90 active:bg-ink-50"
               onClick={() => setNumberOfRounds((n) => Math.max(1, n - 1))}
+              aria-label="減らす"
             >
               −
             </button>
-            <span className="w-10 text-center tabular-nums">{numberOfRounds}</span>
+            <span className="w-10 text-center text-lg font-extrabold tabular-nums text-ink-900">
+              {numberOfRounds}
+            </span>
             <button
-              className="btn-secondary px-2.5"
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-ink-200 bg-white text-lg font-bold text-ink-600 active:scale-90 active:bg-ink-50"
               onClick={() => setNumberOfRounds((n) => Math.min(20, n + 1))}
+              aria-label="増やす"
             >
               ＋
             </button>
@@ -74,18 +77,20 @@ export default function RoundTablesView({ event, playersMap }: Props) {
           onClick={add}
           disabled={event.playerIds.length < event.config.tableSize}
         >
-          回戦を追加
+          ＋ 回戦を追加
         </button>
         {event.playerIds.length < event.config.tableSize && (
-          <p className="text-xs text-stone-400">
-            選手が{event.config.tableSize}人以上必要です。
+          <p className="text-xs text-ink-500">
+            選手が{event.config.tableSize}人以上必要です
           </p>
         )}
       </section>
 
       {rounds.length === 0 ? (
-        <div className="card text-center text-sm text-stone-500">
-          回戦がありません。上から追加してください。
+        <div className="card text-center text-sm text-ink-500">
+          <div className="text-3xl">🎲</div>
+          <p className="mt-2 font-semibold text-ink-700">回戦がありません</p>
+          <p className="mt-1 text-xs">「＋ 回戦を追加」を押してください</p>
         </div>
       ) : (
         rounds.map((round) => {
@@ -98,17 +103,19 @@ export default function RoundTablesView({ event, playersMap }: Props) {
           return (
             <section key={round.id} className="space-y-2">
               <div className="flex items-center justify-between px-1">
-                <h2 className="text-sm font-bold">第{round.index}回戦</h2>
-                <div className="flex gap-2">
+                <h2 className="text-base font-extrabold tracking-tight text-ink-900">
+                  第{round.index}回戦
+                </h2>
+                <div className="flex gap-1">
                   <button
                     onClick={() => regen(round.id)}
-                    className="text-xs text-stone-500 underline"
+                    className="rounded-full px-3 py-1.5 text-xs font-semibold text-brand-600 active:bg-brand-50"
                   >
-                    再抽選
+                    ↻ 再抽選
                   </button>
                   <button
                     onClick={() => remove(round.id)}
-                    className="text-xs text-red-500 underline"
+                    className="rounded-full px-3 py-1.5 text-xs font-semibold text-red-500 active:bg-red-50"
                   >
                     削除
                   </button>
@@ -120,7 +127,9 @@ export default function RoundTablesView({ event, playersMap }: Props) {
                 ))}
               </div>
               {restNames && (
-                <p className="px-1 text-xs text-stone-400">休み: {restNames}</p>
+                <p className="rounded-xl bg-ink-50 px-3 py-2 text-xs text-ink-600">
+                  💤 休み: {restNames}
+                </p>
               )}
             </section>
           );
@@ -142,24 +151,28 @@ function TableCard({
   return (
     <div className="card space-y-1.5 p-3">
       <div className="flex items-center gap-2">
-        <span className="text-sm font-bold">卓 {table.tableNumber}</span>
+        <span className="rounded-full bg-brand-100 px-2.5 py-0.5 text-xs font-bold text-brand-700">
+          卓 {table.tableNumber}
+        </span>
         {table.playerIds.length < config.tableSize && (
           <span className="text-xs text-orange-500">（{table.playerIds.length}人）</span>
         )}
         <span className="flex-1" />
-        {table.scoreEntered && <span className="text-green-600">✅</span>}
+        {table.scoreEntered && <span className="text-base">✅</span>}
       </div>
       {table.playerIds.map((pid, i) => (
         <div key={pid} className="flex items-center gap-2 text-sm">
-          <span className="w-4 text-xs text-stone-400">{SEATS[i] ?? ""}</span>
-          <span className="flex-1 truncate">{playersMap.get(pid)?.name ?? "?"}</span>
+          <span className="w-5 text-[10px] font-bold text-ink-400">
+            {SEATS[i] ?? ""}
+          </span>
+          <span className="flex-1 truncate text-ink-800">
+            {playersMap.get(pid)?.name ?? "?"}
+          </span>
           {table.scoreEntered && table.rawScores[i] != null && (
-            <span className="font-mono text-xs text-stone-500 tabular-nums">
+            <span className="font-mono text-xs font-semibold tabular-nums text-ink-700">
               {table.rawScores[i] / 100}
+              <span className="ml-0.5 text-[10px] text-ink-300">×100</span>
             </span>
-          )}
-          {table.scoreEntered && table.rawScores[i] != null && (
-            <span className="text-[10px] text-stone-300">×100</span>
           )}
         </div>
       ))}

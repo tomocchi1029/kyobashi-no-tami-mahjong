@@ -5,37 +5,73 @@
 html,
 body {
   height: 100%;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
-  background-color: #f5f5f4;
-  color: #1c1917;
+  background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+  color: #0f172a;
   -webkit-font-smoothing: antialiased;
+  font-feature-settings: "palt";
+}
+
+input,
+button,
+select,
+textarea {
+  font: inherit;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
 }
 
 @layer components {
   .card {
-    @apply rounded-lg border border-stone-200 bg-white p-4 shadow-sm;
+    @apply rounded-2xl border border-ink-200/70 bg-white/90 p-4 shadow-soft backdrop-blur;
   }
   .btn {
-    @apply inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40;
+    @apply inline-flex items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-150 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100;
   }
   .btn-primary {
-    @apply btn bg-stone-900 text-white hover:bg-stone-700;
+    @apply btn bg-brand-600 text-white shadow-glow hover:bg-brand-700;
   }
   .btn-secondary {
-    @apply btn border border-stone-300 bg-white text-stone-800 hover:bg-stone-100;
+    @apply btn border border-ink-200 bg-white text-ink-700 hover:bg-ink-50;
+  }
+  .btn-ghost {
+    @apply btn text-ink-600 hover:bg-ink-100;
   }
   .btn-danger {
-    @apply btn border border-red-300 bg-white text-red-600 hover:bg-red-50;
+    @apply btn border border-red-200 bg-white text-red-600 hover:bg-red-50;
   }
   .input {
-    @apply rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-stone-500 focus:outline-none focus:ring-1 focus:ring-stone-500;
+    @apply w-full rounded-xl border border-ink-200 bg-white px-3.5 py-2.5 text-base transition-colors placeholder:text-ink-400 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100;
+  }
+  .input-num {
+    @apply input min-h-[48px] text-center font-mono text-lg tabular-nums;
   }
   .label-row {
-    @apply flex items-center justify-between gap-3 py-2;
+    @apply flex items-center justify-between gap-3 py-2.5;
   }
   .section-title {
-    @apply text-xs font-semibold uppercase tracking-wide text-stone-500;
+    @apply text-xs font-bold uppercase tracking-wider text-ink-500;
+  }
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-full bg-ink-100 px-2.5 py-1 text-xs font-medium text-ink-700;
+  }
+  .chip-brand {
+    @apply inline-flex items-center gap-1 rounded-full bg-brand-100 px-2.5 py-1 text-xs font-medium text-brand-700;
+  }
+  .chip-pos {
+    @apply inline-flex items-center gap-1 rounded-full bg-rose-50 px-2.5 py-1 text-xs font-medium text-rose-700;
+  }
+  .chip-neg {
+    @apply inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700;
   }
 }

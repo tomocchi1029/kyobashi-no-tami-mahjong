@@ -34,43 +34,42 @@ export default function ScoreInputView({ event, playersMap }: Props) {
     .filter((t) => t.roundId === roundId)
     .sort((a, b) => a.tableNumber - b.tableNumber);
 
+  if (rounds.length === 0) {
+    return (
+      <div className="card text-center text-sm text-ink-500">
+        <div className="text-3xl">✏️</div>
+        <p className="mt-2 font-semibold text-ink-700">回戦がありません</p>
+        <p className="mt-1 text-xs">卓組タブから回戦を追加してください</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
-      <div className="flex">
-        {rounds.length <= 4 ? (
-          <div className="flex flex-1 flex-wrap gap-1">
-            {rounds.map((r) => (
+      <div className="overflow-x-auto rounded-2xl bg-white/70 p-1 shadow-soft backdrop-blur">
+        <div className="flex min-w-min gap-1">
+          {rounds.map((r) => {
+            const active = roundId === r.id;
+            return (
               <button
                 key={r.id}
                 onClick={() => setRoundId(r.id)}
-                className={`flex-1 rounded-md px-3 py-2 text-xs font-medium ${
-                  roundId === r.id
-                    ? "bg-stone-900 text-white"
-                    : "bg-white text-stone-600 border border-stone-200"
+                className={`shrink-0 rounded-xl px-4 py-2.5 text-sm font-bold transition-all active:scale-95 ${
+                  active
+                    ? "bg-brand-600 text-white shadow-glow"
+                    : "text-ink-500 hover:bg-ink-100"
                 }`}
               >
-                第{r.index}
-              </button>
-            ))}
-          </div>
-        ) : (
-          <select
-            className="input flex-1"
-            value={roundId}
-            onChange={(e) => setRoundId(e.target.value)}
-          >
-            {rounds.map((r) => (
-              <option key={r.id} value={r.id}>
                 第{r.index}回戦
-              </option>
-            ))}
-          </select>
-        )}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {roundTables.length === 0 ? (
-        <div className="card text-center text-sm text-stone-500">
-          回戦を選択してください。
+        <div className="card text-center text-sm text-ink-500">
+          回戦を選択してください
         </div>
       ) : (
         <div className="space-y-3">
@@ -124,8 +123,10 @@ function ScoreInputSection({
   const parsedScores = scores.map((s) => parseInt(s, 10) * 100);
   const parsedChips = chips.map((c) => parseInt(c, 10));
 
-  // auto-compute missing score (render-time, no state)
-  const filledIdx = parsedScores.map((v, i) => (Number.isFinite(v) ? i : -1)).filter((i) => i >= 0);
+  // auto-compute missing score
+  const filledIdx = parsedScores
+    .map((v, i) => (Number.isFinite(v) ? i : -1))
+    .filter((i) => i >= 0);
   const emptyIdx = [...Array(n).keys()].filter((i) => !filledIdx.includes(i));
   const isAuto = emptyIdx.length === 1 && filledIdx.length === n - 1;
   let autoRaw = 0;
@@ -166,83 +167,94 @@ function ScoreInputSection({
   }
 
   return (
-    <section className="card space-y-2 p-3">
+    <section className="card space-y-3 p-3">
       <div className="flex items-center justify-between">
-        <span className="text-sm font-bold">卓 {table.tableNumber}</span>
+        <span className="rounded-full bg-brand-100 px-2.5 py-0.5 text-xs font-bold text-brand-700">
+          卓 {table.tableNumber}
+        </span>
         {table.scoreEntered && (
-          <span className="text-xs text-green-600">入力済み</span>
+          <span className="text-[11px] font-semibold text-emerald-600">✅ 入力済み</span>
         )}
       </div>
 
-      {table.playerIds.map((pid, i) => {
-        const isAutoField = isAuto && emptyIdx[0] === i;
-        const displayVal = isAutoField ? String(Math.round(autoRaw / 100)) : scores[i];
-        return (
-          <div key={pid} className="flex items-center gap-2 text-sm">
-            <span className="w-4 text-xs text-stone-400">{SEATS[i] ?? ""}</span>
-            <span className="w-20 truncate">{playersMap.get(pid)?.name ?? "?"}</span>
-            <span className="flex-1" />
-            <div className="relative">
-              <input
-                type="number"
-                inputMode="numeric"
-                className={`input w-28 min-h-[44px] text-right tabular-nums ${isAutoField ? "bg-stone-100 text-stone-500" : ""}`}
-                placeholder={isAutoField ? "自動" : "×100"}
-                value={displayVal ?? ""}
-                onChange={(e) => {
-                  setScores((prev) => {
-                    const next = [...prev];
-                    next[i] = e.target.value;
-                    return next;
-                  });
-                  setDirty(true);
-                }}
-              />
+      <div className="space-y-2">
+        {table.playerIds.map((pid, i) => {
+          const isAutoField = isAuto && emptyIdx[0] === i;
+          const displayVal = isAutoField ? String(Math.round(autoRaw / 100)) : scores[i];
+          return (
+            <div key={pid} className="flex items-center gap-2">
+              <span className="w-5 text-[10px] font-bold text-ink-400">
+                {SEATS[i] ?? ""}
+              </span>
+              <span className="w-24 shrink-0 truncate text-sm font-semibold text-ink-800">
+                {playersMap.get(pid)?.name ?? "?"}
+              </span>
+              <div className="flex-1">
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  className={`input w-full min-h-[44px] text-center font-mono text-base tabular-nums ${isAutoField ? "bg-ink-100 text-ink-500" : ""}`}
+                  placeholder={isAutoField ? "自動" : "×100"}
+                  value={displayVal ?? ""}
+                  onChange={(e) => {
+                    setScores((prev) => {
+                      const next = [...prev];
+                      next[i] = e.target.value;
+                      return next;
+                    });
+                    setDirty(true);
+                  }}
+                />
+              </div>
+              {!config.noRate && (
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  className="input w-16 min-h-[44px] text-center font-mono text-base tabular-nums"
+                  placeholder="チップ"
+                  value={chips[i] ?? ""}
+                  onChange={(e) => {
+                    setChips((prev) => {
+                      const next = [...prev];
+                      next[i] = e.target.value;
+                      return next;
+                    });
+                    setDirty(true);
+                  }}
+                />
+              )}
             </div>
-            <span className="w-7 text-xs text-stone-400 text-center">×100</span>
-            {!config.noRate && (
-              <input
-              type="number"
-              inputMode="numeric"
-              className="input w-20 min-h-[44px] text-right tabular-nums"
-              placeholder="チップ"
-              value={chips[i] ?? ""}
-              onChange={(e) => {
-                setChips((prev) => {
-                  const next = [...prev];
-                  next[i] = e.target.value;
-                  return next;
-                });
-                setDirty(true);
-              }}
-            />
-          )}
-        </div>
-      )})}
+          );
+        })}
+      </div>
 
       {valid && results.length > 0 && (
-        <div className="mt-1 rounded-md bg-stone-50 p-2">
-          <div className="mb-1 text-xs font-bold text-stone-500">精算プレビュー</div>
-          <ul className="space-y-0.5">
+        <div className="rounded-xl bg-gradient-to-br from-brand-50 to-ink-50 p-2.5">
+          <div className="mb-1.5 text-[11px] font-bold uppercase tracking-wider text-ink-500">
+            精算プレビュー
+          </div>
+          <ul className="space-y-1">
             {results.map((r) => (
               <li
                 key={r.playerId}
                 className="flex items-center gap-2 text-xs"
               >
-                <span className="w-6 tabular-nums">{r.rank}位</span>
-                <span className="flex-1 truncate">
+                <span className="w-6 font-extrabold tabular-nums text-ink-700">
+                  {r.rank}
+                </span>
+                <span className="flex-1 truncate font-semibold text-ink-800">
                   {playersMap.get(r.playerId)?.name ?? "?"}
                 </span>
-                <span className="text-stone-500 tabular-nums">
+                <span className="font-mono tabular-nums text-ink-600">
                   {r.matchPoint.toFixed(1)}pt
                 </span>
                 {!config.noRate && (
                   <span
-                    className={`w-16 text-right font-semibold tabular-nums ${
-                      r.money >= 0 ? "text-mahjong-red" : "text-mahjong-blue"
+                    className={`w-16 text-right font-extrabold tabular-nums ${
+                      r.money >= 0 ? "text-pos" : "text-neg"
                     }`}
                   >
-                    ¥{r.money.toFixed(0)}
+                    {r.money >= 0 ? "+" : ""}¥{r.money.toFixed(0)}
                   </span>
                 )}
               </li>
@@ -251,8 +263,12 @@ function ScoreInputSection({
         </div>
       )}
 
-      <button className="btn-primary w-full" onClick={save} disabled={!valid}>
-        保存
+      <button
+        className={`btn w-full py-3 ${valid ? "btn-primary" : "btn-secondary opacity-50"}`}
+        onClick={save}
+        disabled={!valid}
+      >
+        {dirty ? "保存する" : table.scoreEntered ? "更新する" : "保存する"}
       </button>
     </section>
   );
