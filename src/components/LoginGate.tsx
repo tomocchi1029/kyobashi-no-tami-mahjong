@@ -35,6 +35,9 @@ export default function LoginGate({ children }: { children: React.ReactNode }) {
         </div>
 
         <div className="space-y-2">
+          <p className="text-center text-xs text-stone-500 leading-relaxed">
+            京橋の民の中でコロコロと雀名を変える人の苗字を小文字で入力してください。
+          </p>
           <input
             type="password"
             className="input w-full text-center text-lg tracking-widest"
