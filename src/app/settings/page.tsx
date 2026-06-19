@@ -11,8 +11,8 @@ export default function SettingsPage() {
           京橋の民セット麻雀記録ツール  v0.1.0
         </p>
         <p className="text-xs text-stone-500">
-          Next.js + IndexedDB で構築された完全クライアントサイドアプリです。
-          データはこの端末のブラウザにのみ保存され、サーバーには送信されません。
+          Next.js + IndexedDB + Supabase で構築。データはクラウド（Supabase）と
+          ローカル（IndexedDB）の両方に保存され、複数端末間で共有できます。
         </p>
       </section>
 
@@ -42,9 +42,9 @@ export default function SettingsPage() {
       <section className="card space-y-2">
         <h2 className="section-title">注意事項</h2>
         <ul className="list-disc space-y-1 pl-5 text-xs text-stone-500">
-          <li>ブラウザのキャッシュを消去するとデータも削除されます</li>
-          <li>データのバックアップ機能は現在ありません（今後のアップデート予定）</li>
-          <li>複数端末間の同期には対応していません</li>
+          <li>ブラウザのキャッシュを消去するとローカルデータは削除されますが、クラウド上のデータは保持されます</li>
+          <li>複数端末間の同期は自動で行われます（Supabase に接続されている場合）</li>
+          <li>Supabase 未接続時はローカル（IndexedDB）のみで動作します</li>
         </ul>
       </section>
     </div>

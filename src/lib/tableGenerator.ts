@@ -30,22 +30,49 @@ function updatePairingCounts(
   }
 }
 
+function getTableGroups(
+  n: number,
+  size: number,
+  allowThree: boolean
+): number[] {
+  if (allowThree && size === 4 && n % size === 2) {
+    const tableCount4 = Math.max(0, Math.floor(n / size) - 1);
+    const groups: number[] = [];
+    for (let i = 0; i < tableCount4; i++) groups.push(size);
+    let remaining = n - tableCount4 * size;
+    while (remaining >= 3) {
+      groups.push(3);
+      remaining -= 3;
+    }
+    return groups;
+  }
+  const groups: number[] = [];
+  let remaining = n;
+  while (remaining >= size) {
+    groups.push(size);
+    remaining -= size;
+  }
+  return groups;
+}
+
 function pairingPenalty(
   order: string[],
   counts: PairingCounts,
-  size: number
+  size: number,
+  allowThree: boolean
 ): number {
+  const groups = getTableGroups(order.length, size, allowThree);
   let penalty = 0;
   let cursor = 0;
-  while (cursor + size <= order.length) {
-    const group = order.slice(cursor, cursor + size);
+  for (const gs of groups) {
+    const group = order.slice(cursor, cursor + gs);
     for (let i = 0; i < group.length; i++) {
       for (let j = i + 1; j < group.length; j++) {
         const c = counts.get(group[i])?.get(group[j]) ?? 0;
         penalty += c * c;
       }
     }
-    cursor += size;
+    cursor += gs;
   }
   return penalty;
 }
@@ -53,25 +80,41 @@ function pairingPenalty(
 function fairShuffle(
   playerIds: string[],
   counts: PairingCounts,
-  size: number
+  size: number,
+  allowThree: boolean
 ): string[] {
   if (playerIds.length <= 4) {
     return [...playerIds].sort(() => Math.random() - 0.5);
   }
-  const result = [...playerIds].sort(() => Math.random() - 0.5);
-  const iterations = 50;
-  for (let it = 0; it < iterations; it++) {
-    const i = Math.floor(Math.random() * result.length);
-    const j = Math.floor(Math.random() * result.length);
-    if (i === j) continue;
-    const currentPenalty = pairingPenalty(result, counts, size);
-    [result[i], result[j]] = [result[j], result[i]];
-    const newPenalty = pairingPenalty(result, counts, size);
-    if (newPenalty > currentPenalty) {
+  const restarts = 50;
+  const iterations = 200;
+  let bestResult: string[] | null = null;
+  let bestPenalty = Infinity;
+
+  for (let r = 0; r < restarts; r++) {
+    const result = [...playerIds].sort(() => Math.random() - 0.5);
+    let currentPenalty = pairingPenalty(result, counts, size, allowThree);
+
+    for (let it = 0; it < iterations; it++) {
+      const i = Math.floor(Math.random() * result.length);
+      const j = Math.floor(Math.random() * result.length);
+      if (i === j) continue;
       [result[i], result[j]] = [result[j], result[i]];
+      const newPenalty = pairingPenalty(result, counts, size, allowThree);
+      if (newPenalty > currentPenalty) {
+        [result[i], result[j]] = [result[j], result[i]];
+      } else {
+        currentPenalty = newPenalty;
+      }
+    }
+
+    if (currentPenalty < bestPenalty) {
+      bestPenalty = currentPenalty;
+      bestResult = [...result];
     }
   }
-  return result;
+
+  return bestResult!;
 }
 
 function splitIntoTables(
@@ -152,7 +195,7 @@ export async function generateRounds(
   for (let offset = 0; offset < numberOfRounds; offset++) {
     const roundIndex = startIndex + offset;
     const roundId = uid();
-    const order = fairShuffle([...playerIds], pairingCounts, config.tableSize);
+    const order = fairShuffle([...playerIds], pairingCounts, config.tableSize, config.allowThreePlayerTable);
     const { tables, rest } = splitIntoTables(order, config);
     const round: Round = {
       id: roundId,
@@ -190,7 +233,7 @@ export async function regenerateRound(
     .toArray();
   const pairingCounts = buildPairingCounts(allTables);
 
-  const order = fairShuffle([...playerIds], pairingCounts, config.tableSize);
+  const order = fairShuffle([...playerIds], pairingCounts, config.tableSize, config.allowThreePlayerTable);
   const { tables, rest } = splitIntoTables(order, config);
   const tableRecords = buildTableRecords(eventId, roundId, tables, config);
 
