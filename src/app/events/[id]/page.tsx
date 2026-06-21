@@ -49,15 +49,7 @@ export default function EventDetailPage() {
 
   useEffect(() => setMounted(true), []);
 
-  // Filter visible tabs based on admin status
-  const visibleTabs = isAdmin
-    ? ALL_TABS
-    : ALL_TABS.filter(([k]) => k !== "tables");
-
-  // If not admin and somehow on tables tab, switch to scores
-  useEffect(() => {
-    if (!isAdmin && tab === "tables") setTab("scores");
-  }, [isAdmin, tab]);
+  const visibleTabs = ALL_TABS;
 
   if (!mounted || event === undefined) {
     return (
@@ -152,7 +144,7 @@ export default function EventDetailPage() {
         </div>
       </div>
 
-      {tab === "tables" && isAdmin && (
+      {tab === "tables" && (
         <RoundTablesView event={event} playersMap={playersMap} requireAdmin={requireAdmin} />
       )}
       {tab === "scores" && (

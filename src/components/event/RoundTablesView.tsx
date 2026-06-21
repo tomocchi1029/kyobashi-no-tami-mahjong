@@ -109,7 +109,7 @@ export default function RoundTablesView({ event, playersMap, requireAdmin }: Pro
                 </h2>
                 <div className="flex gap-1">
                   <button
-                    onClick={() => requireAdmin(() => regen(round.id))}
+                    onClick={() => regen(round.id)}
                     className="rounded-full px-3 py-1.5 text-xs font-semibold text-brand-600 active:bg-brand-50"
                   >
                     ↻ 再抽選
