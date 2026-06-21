@@ -197,6 +197,17 @@ export async function deleteEventSchedule(id: string): Promise<void> {
   await Promise.all([db.eventSchedules.delete(id), dbDelete("event_schedules", id)]);
 }
 
+export async function updateEventPlayers(id: string, playerIds: string[]): Promise<void> {
+  const now = Date.now();
+  await Promise.all([
+    db.events.update(id, { playerIds, updatedAt: now }),
+    dbUpdate("events", id, {
+      player_ids: playerIds,
+      updated_at: new Date(now).toISOString(),
+    } as Record<string, unknown>),
+  ]);
+}
+
 export async function updateEventConfig(id: string, config: EventConfig): Promise<void> {
   const now = Date.now();
   await Promise.all([

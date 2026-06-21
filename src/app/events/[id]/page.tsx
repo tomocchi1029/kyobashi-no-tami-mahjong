@@ -11,13 +11,15 @@ import { useAdminAction } from "@/lib/useAdminAction";
 import RoundTablesView from "@/components/event/RoundTablesView";
 import ScoreInputView from "@/components/event/ScoreInputView";
 import RankingView from "@/components/event/RankingView";
+import EventPlayersView from "@/components/event/EventPlayersView";
 
-type Tab = "tables" | "scores" | "ranking";
+type Tab = "tables" | "scores" | "ranking" | "players";
 
 const ALL_TABS: [Tab, string, string][] = [
   ["tables", "卓組", "🎲"],
   ["scores", "点数入力", "✏️"],
   ["ranking", "順位", "🏆"],
+  ["players", "選手", "👥"],
 ];
 
 export default function EventDetailPage() {
@@ -152,6 +154,9 @@ export default function EventDetailPage() {
       )}
       {tab === "ranking" && (
         <RankingView event={event} playersMap={playersMap} />
+      )}
+      {tab === "players" && (
+        <EventPlayersView event={event} isAdmin={isAdmin} />
       )}
       {adminGate}
     </div>
