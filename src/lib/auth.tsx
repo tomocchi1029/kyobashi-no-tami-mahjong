@@ -39,9 +39,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [lastSyncedAt, setLastSyncedAt] = useState<number | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  const isSyncingRef = useRef(false);
+
   const performSync = useCallback(async () => {
     if (!isSupabaseConfigured()) return;
-    if (isSyncing) return;
+    if (isSyncingRef.current) return;
+    isSyncingRef.current = true;
     setIsSyncing(true);
     try {
       const saved = sessionStorage.getItem("lastSyncedAt");
@@ -53,9 +56,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (e) {
       console.warn("Failed to sync from Supabase:", e);
     } finally {
+      isSyncingRef.current = false;
       setIsSyncing(false);
     }
-  }, [isSyncing]);
+  }, []);
 
   const triggerSync = useCallback(async () => {
     await performSync();

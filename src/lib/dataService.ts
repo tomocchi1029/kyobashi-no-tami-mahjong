@@ -62,7 +62,12 @@ export async function createPlayer(name: string): Promise<Player> {
   };
   await Promise.all([
     db.players.add(player as Player),
-    dbInsert("players", { ...player }),
+    dbInsert("players", {
+      id: player.id,
+      name: player.name,
+      created_at: new Date(player.createdAt).toISOString(),
+      updated_at: new Date(player.updatedAt).toISOString(),
+    }),
   ]);
   return player;
 }
@@ -80,6 +85,7 @@ export async function updatePlayer(id: string, name: string): Promise<void> {
     dbUpdate("players", id, { name: trimmed, updated_at: new Date(now).toISOString() }),
   ]);
 }
+
 
 // ── Event ──
 
@@ -120,7 +126,10 @@ export async function createEvent(
   const tasks: Promise<unknown>[] = [
     db.events.add(event),
     dbInsert("events", {
-      ...event,
+      id: event.id,
+      name: event.name,
+      created_at: new Date(event.createdAt).toISOString(),
+      updated_at: new Date(event.updatedAt).toISOString(),
       config: JSON.stringify(config),
       player_ids: playerIds,
     }),
@@ -229,16 +238,31 @@ export async function addRound(
   round: Round,
   tables: TableAssignment[]
 ): Promise<void> {
-  const supabaseTables = tables.map((t) => ({
-    ...t,
-    rawScores: t.rawScores as number[],
-    chipCounts: t.chipCounts as number[],
+  const cloudRound = {
+    id: round.id,
+    event_id: round.eventId,
+    index: round.index,
+    created_at: new Date(round.createdAt).toISOString(),
+    updated_at: new Date(round.updatedAt).toISOString(),
+    rest_player_ids: round.restPlayerIds,
+  };
+  const cloudTables = tables.map((t) => ({
+    id: t.id,
+    event_id: t.eventId,
+    round_id: t.roundId,
+    table_number: t.tableNumber,
+    player_ids: t.playerIds,
+    raw_scores: t.rawScores,
+    chip_counts: t.chipCounts,
+    score_entered: t.scoreEntered,
+    created_at: new Date(t.createdAt).toISOString(),
+    updated_at: new Date(t.updatedAt).toISOString(),
   }));
   await Promise.all([
     db.rounds.add(round),
     db.gameTables.bulkAdd(tables),
-    dbInsert("rounds", round),
-    dbBatchInsert("game_tables", supabaseTables as unknown as Record<string, unknown>[]),
+    dbInsert("rounds", cloudRound),
+    dbBatchInsert("game_tables", cloudTables as unknown as Record<string, unknown>[]),
   ]);
 }
 
@@ -266,10 +290,21 @@ export async function replaceRoundTables(
     dbBatchDelete("game_tables", oldTableIds),
     dbBatchInsert(
       "game_tables",
-      newTables.map((t) => ({ ...t })) as unknown as Record<string, unknown>[]
+      newTables.map((t) => ({
+        id: t.id,
+        event_id: t.eventId,
+        round_id: t.roundId,
+        table_number: t.tableNumber,
+        player_ids: t.playerIds,
+        raw_scores: t.rawScores,
+        chip_counts: t.chipCounts,
+        score_entered: t.scoreEntered,
+        created_at: new Date(t.createdAt).toISOString(),
+        updated_at: new Date(t.updatedAt).toISOString(),
+      })) as unknown as Record<string, unknown>[]
     ),
     dbUpdate("rounds", round.id, {
-      restPlayerIds: round.restPlayerIds,
+      rest_player_ids: round.restPlayerIds,
     } as Record<string, unknown>),
   ]);
 }
@@ -477,7 +512,12 @@ export async function pushAllToCloud(): Promise<{
   // Supabaseへの5テーブル並列アップロード
   const uploadTasks: Promise<unknown>[] = [];
   if (players.length) {
-    uploadTasks.push(dbBatchInsert("players", players as unknown[]));
+    uploadTasks.push(dbBatchInsert("players", players.map((p) => ({
+      id: p.id,
+      name: p.name,
+      created_at: new Date(p.createdAt).toISOString(),
+      updated_at: new Date(p.updatedAt).toISOString(),
+    })) as unknown[]));
   }
   if (events.length) {
     const mapped = events.map((e) => ({
@@ -506,6 +546,7 @@ export async function pushAllToCloud(): Promise<{
       event_id: r.eventId,
       index: r.index,
       created_at: new Date(r.createdAt).toISOString(),
+      updated_at: new Date(r.updatedAt).toISOString(),
       rest_player_ids: r.restPlayerIds,
     }));
     uploadTasks.push(dbBatchInsert("rounds", mapped as unknown[]));
@@ -521,6 +562,7 @@ export async function pushAllToCloud(): Promise<{
       chip_counts: t.chipCounts,
       score_entered: t.scoreEntered,
       created_at: new Date(t.createdAt).toISOString(),
+      updated_at: new Date(t.updatedAt).toISOString(),
     }));
     uploadTasks.push(dbBatchInsert("game_tables", mapped as unknown[]));
   }
