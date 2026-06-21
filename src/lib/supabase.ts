@@ -9,6 +9,8 @@ function getEnv(key: string): string | undefined {
 }
 
 let _supabase: ReturnType<typeof createClient> | null = null;
+let _checked = false;
+let _configured = false;
 
 export function getSupabase() {
   if (_supabase) return _supabase;
@@ -16,12 +18,24 @@ export function getSupabase() {
   const url = getEnv("NEXT_PUBLIC_SUPABASE_URL");
   const key = getEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY");
 
-  if (!url || !key) return null;
+  if (typeof window !== "undefined") {
+    console.log("[supabase] URL:", url ? `${url.slice(0, 30)}...` : "(undefined)");
+    console.log("[supabase] KEY:", key ? `${key.slice(0, 20)}...` : "(undefined)");
+  }
+
+  if (!url || !key) {
+    _checked = true;
+    _configured = false;
+    return null;
+  }
 
   _supabase = createClient(url, key, { auth: { persistSession: false } });
+  _checked = true;
+  _configured = true;
   return _supabase;
 }
 
 export function isSupabaseConfigured(): boolean {
-  return !!getSupabase();
+  if (!_checked) getSupabase();
+  return _configured;
 }
