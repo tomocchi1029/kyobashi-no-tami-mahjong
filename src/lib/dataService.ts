@@ -336,6 +336,90 @@ export async function updateTableScores(
   ]);
 }
 
+// ── Manual table assignment edit ──
+
+export async function saveTableAssignments(
+  roundId: string,
+  tables: TableAssignment[],
+  restPlayerIds: string[]
+): Promise<void> {
+  const round = await db.rounds.get(roundId);
+  if (!round) return;
+  const now = Date.now();
+
+  // スコア未入力の卓は「未割当」状態として扱う: メンバーが0なら削除する
+  const validTables = tables.filter((t) => t.playerIds.length > 0);
+
+  // 卓番号を連番に振り直す
+  const renumbered = validTables.map((t, i) => ({
+    ...t,
+    tableNumber: i + 1,
+    updatedAt: now,
+  }));
+
+  // 旧テーブルを取得
+  const oldTables = await db.gameTables.where("roundId").equals(roundId).toArray();
+  const oldTableIds = oldTables.map((t) => t.id);
+
+  // 削除された卓（playerIds が 0）を検出
+  const removedIds = oldTableIds.filter((id) => !renumbered.some((t) => t.id === id));
+  const addedOrChanged = renumbered.filter(
+    (t) => !oldTables.find((o) => o.id === t.id && JSON.stringify({
+      playerIds: o.playerIds,
+      rawScores: o.rawScores,
+      chipCounts: o.chipCounts,
+      scoreEntered: o.scoreEntered,
+    }) === JSON.stringify({
+      playerIds: t.playerIds,
+      rawScores: t.rawScores,
+      chipCounts: t.chipCounts,
+      scoreEntered: t.scoreEntered,
+    }))
+  );
+
+  const newRound: Round = { ...round, restPlayerIds, updatedAt: now };
+
+  // ローカル更新
+  const localTasks: Promise<unknown>[] = [];
+  if (removedIds.length) {
+    localTasks.push(db.gameTables.bulkDelete(removedIds));
+  }
+  for (const t of renumbered) {
+    localTasks.push(db.gameTables.put(t));
+  }
+  localTasks.push(db.rounds.put(newRound));
+  await Promise.all(localTasks);
+
+  // クラウド更新
+  const cloudTasks: Promise<unknown>[] = [];
+  if (removedIds.length) {
+    cloudTasks.push(dbBatchDelete("game_tables", removedIds));
+  }
+  for (const t of addedOrChanged) {
+    cloudTasks.push(
+      dbInsert("game_tables", {
+        id: t.id,
+        event_id: t.eventId,
+        round_id: t.roundId,
+        table_number: t.tableNumber,
+        player_ids: t.playerIds,
+        raw_scores: t.rawScores,
+        chip_counts: t.chipCounts,
+        score_entered: t.scoreEntered,
+        created_at: new Date(t.createdAt).toISOString(),
+        updated_at: new Date(t.updatedAt).toISOString(),
+      })
+    );
+  }
+  cloudTasks.push(
+    dbUpdate("rounds", roundId, {
+      rest_player_ids: restPlayerIds,
+      updated_at: new Date(now).toISOString(),
+    } as Record<string, unknown>)
+  );
+  await Promise.all(cloudTasks);
+}
+
 // ── Sync ──
 
 let syncCounter = 0;

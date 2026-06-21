@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/lib/db";
-import { SEATS, type MahjongEvent, type Player } from "@/lib/types";
+import { SEATS, type MahjongEvent, type Player, type TableAssignment } from "@/lib/types";
 import { generateRounds, regenerateRound, deleteRound } from "@/lib/tableGenerator";
+import TableEditor from "@/components/event/TableEditor";
 
 interface Props {
   event: MahjongEvent;
@@ -25,6 +26,7 @@ export default function RoundTablesView({ event, playersMap, requireAdmin }: Pro
   );
 
   const [numberOfRounds, setNumberOfRounds] = useState(1);
+  const [editingRound, setEditingRound] = useState<string | null>(null);
 
   async function add() {
     if (event.playerIds.length < event.config.tableSize) return;
@@ -47,6 +49,13 @@ export default function RoundTablesView({ event, playersMap, requireAdmin }: Pro
     arr.push(t);
     tablesByRound.set(t.roundId, arr);
   }
+
+  const editingTables = editingRound
+    ? (tablesByRound.get(editingRound) ?? []).sort((a, b) => a.tableNumber - b.tableNumber)
+    : [];
+  const editingRestIds = editingRound
+    ? rounds.find((r) => r.id === editingRound)?.restPlayerIds ?? []
+    : [];
 
   return (
     <div className="space-y-4">
@@ -75,7 +84,7 @@ export default function RoundTablesView({ event, playersMap, requireAdmin }: Pro
         </div>
         <button
           className="btn-primary w-full"
-            onClick={() => requireAdmin(add)}
+          onClick={() => requireAdmin(add)}
           disabled={event.playerIds.length < event.config.tableSize}
         >
           ＋ 回戦を追加
@@ -109,6 +118,12 @@ export default function RoundTablesView({ event, playersMap, requireAdmin }: Pro
                 </h2>
                 <div className="flex gap-1">
                   <button
+                    onClick={() => setEditingRound(round.id)}
+                    className="rounded-full bg-brand-50 px-3 py-1.5 text-xs font-bold text-brand-700 active:bg-brand-100"
+                  >
+                    ✏️ 編集
+                  </button>
+                  <button
                     onClick={() => regen(round.id)}
                     className="rounded-full px-3 py-1.5 text-xs font-semibold text-brand-600 active:bg-brand-50"
                   >
@@ -136,6 +151,19 @@ export default function RoundTablesView({ event, playersMap, requireAdmin }: Pro
           );
         })
       )}
+
+      {editingRound && (
+        <TableEditor
+          event={event}
+          roundId={editingRound}
+          initialTables={editingTables}
+          initialRestPlayerIds={editingRestIds}
+          playersMap={playersMap}
+          allPlayerIds={event.playerIds}
+          onClose={() => setEditingRound(null)}
+          onSaved={() => setEditingRound(null)}
+        />
+      )}
     </div>
   );
 }
@@ -145,7 +173,7 @@ function TableCard({
   playersMap,
   config,
 }: {
-  table: import("@/lib/types").TableAssignment;
+  table: TableAssignment;
   playersMap: Map<string, Player>;
   config: import("@/lib/types").EventConfig;
 }) {
@@ -169,7 +197,7 @@ function TableCard({
           <span className="flex-1 truncate text-ink-800">
             {playersMap.get(pid)?.name ?? "?"}
           </span>
-          {table.scoreEntered && table.rawScores[i] != null && (
+          {table.scoreEntered && table.rawScores[i] != null && table.rawScores[i] !== 0 && (
             <span className="font-mono text-xs font-semibold tabular-nums text-ink-700">
               {table.rawScores[i] / 100}
               <span className="ml-0.5 text-[10px] text-ink-300">×100</span>
