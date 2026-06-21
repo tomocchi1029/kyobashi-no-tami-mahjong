@@ -78,7 +78,7 @@ function saveState(eventId: string, state: TimerState) {
   sessionStorage.setItem(STORAGE_KEY(eventId), JSON.stringify(state));
 }
 
-function playBeep() {
+function playBeep(freq = 880, duration = 0.6) {
   if (typeof window === "undefined") return;
   try {
     const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
@@ -86,11 +86,11 @@ function playBeep() {
     const gain = ctx.createGain();
     osc.connect(gain);
     gain.connect(ctx.destination);
-    osc.frequency.value = 880;
+    osc.frequency.value = freq;
     gain.gain.setValueAtTime(0.3, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
     osc.start();
-    osc.stop(ctx.currentTime + 0.6);
+    osc.stop(ctx.currentTime + duration);
   } catch {
     // ignore
   }
@@ -100,7 +100,8 @@ export function useTimer(eventId: string, durationMinutes = 50) {
   const duration = durationMinutes * 60;
   const [state, setState] = useState<TimerState>(() => loadState(eventId, duration));
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const notifiedRef = useRef(false);
+  const notified10MinRef = useRef(false);
+  const notifiedEndRef = useRef(false);
 
   // 永続化
   useEffect(() => {
@@ -120,14 +121,24 @@ export function useTimer(eventId: string, durationMinutes = 50) {
       setState((s) => {
         if (!s.running) return s;
         const newS = tick(s, 1);
+        // 残り10分（600秒）になった時点で通知（1回のみ）
+        if (
+          s.remaining > 600 &&
+          newS.remaining <= 600 &&
+          newS.remaining > 0 &&
+          !notified10MinRef.current
+        ) {
+          notified10MinRef.current = true;
+          playBeep(660, 0.8);
+        }
         // 50分到達で通知（1回のみ）
         if (
           s.remaining > 0 &&
           newS.remaining === 0 &&
-          !notifiedRef.current
+          !notifiedEndRef.current
         ) {
-          notifiedRef.current = true;
-          playBeep();
+          notifiedEndRef.current = true;
+          playBeep(880, 1.2);
         }
         return newS;
       });
@@ -160,7 +171,8 @@ export function useTimer(eventId: string, durationMinutes = 50) {
         };
       }
     });
-    notifiedRef.current = false;
+    notified10MinRef.current = false;
+    notifiedEndRef.current = false;
   }, []);
 
   const pause = useCallback(() => {
@@ -183,7 +195,8 @@ export function useTimer(eventId: string, durationMinutes = 50) {
 
   const reset = useCallback(() => {
     setState(defaultState(duration));
-    notifiedRef.current = false;
+    notified10MinRef.current = false;
+    notifiedEndRef.current = false;
   }, [duration]);
 
   return {
