@@ -67,6 +67,13 @@ export async function deletePlayer(id: string): Promise<void> {
   await dbDelete("players", id);
 }
 
+export async function updatePlayer(id: string, name: string): Promise<void> {
+  const trimmed = name.trim();
+  if (!trimmed) return;
+  await db.players.update(id, { name: trimmed });
+  await dbUpdate("players", id, { name: trimmed });
+}
+
 // ── Event ──
 
 export async function createEvent(
