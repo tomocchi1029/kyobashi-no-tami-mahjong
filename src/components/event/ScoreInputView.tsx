@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { SEATS, type EventConfig, type MahjongEvent, type Player, type TableAssignment } from "@/lib/types";
 import { computeResults } from "@/lib/scoreCalculator";
 import { updateTableScores } from "@/lib/dataService";
+import Timer from "@/components/Timer";
 
 interface Props {
   event: MahjongEvent;
@@ -46,6 +47,7 @@ export default function ScoreInputView({ event, playersMap }: Props) {
 
   return (
     <div className="space-y-4">
+      <Timer eventId={event.id} />
       <div className="overflow-x-auto rounded-2xl bg-white/70 p-1 shadow-soft backdrop-blur">
         <div className="flex min-w-min gap-1">
           {rounds.map((r) => {

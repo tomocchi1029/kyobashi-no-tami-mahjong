@@ -11,6 +11,7 @@ import { useAdminAction } from "@/lib/useAdminAction";
 import RoundTablesView from "@/components/event/RoundTablesView";
 import ScoreInputView from "@/components/event/ScoreInputView";
 import RankingView from "@/components/event/RankingView";
+import PlayersDetail from "@/components/event/PlayersDetail";
 
 type Tab = "tables" | "scores" | "ranking";
 
@@ -129,6 +130,8 @@ export default function EventDetailPage() {
           </div>
         )}
       </div>
+
+      <PlayersDetail event={event} playersMap={playersMap} />
 
       <div className="sticky top-[60px] z-10 -mx-1 rounded-2xl bg-white/70 p-1 shadow-soft backdrop-blur-md">
         <div className="flex gap-1">
