@@ -5,12 +5,14 @@ import { useAuth } from "@/lib/auth";
 import { useAdminAction } from "@/lib/useAdminAction";
 import { pushAllToCloud } from "@/lib/dataService";
 import { isSupabaseConfigured } from "@/lib/supabase";
+import AdminPrompt from "@/components/AdminPrompt";
 
 export default function SettingsPage() {
   const { isAdmin } = useAuth();
-  const { requireAdmin, adminGate } = useAdminAction();
+  const { adminGate } = useAdminAction();
   const [syncing, setSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<string | null>(null);
+  const [adminPromptOpen, setAdminPromptOpen] = useState(false);
 
   const supabaseReady = isSupabaseConfigured();
 
@@ -37,29 +39,72 @@ export default function SettingsPage() {
         設定
       </h1>
 
-      {isAdmin && supabaseReady && (
-        <section className="card space-y-3 border-brand-200 bg-brand-50/50">
-          <h2 className="section-title">☁️ クラウド反映</h2>
-          <p className="text-xs leading-relaxed text-ink-600">
-            ローカル（IndexedDB）にある全データを Supabase にアップロードします。
-            既存データは上書きされます。
-          </p>
-          <button
-            onClick={doSync}
-            disabled={syncing}
-            className="btn-primary w-full"
-          >
-            {syncing ? "反映中…" : "☁️ 全データをクラウドに反映"}
-          </button>
-          {syncResult && (
-            <p
-              className={`text-xs font-semibold ${
-                syncResult.startsWith("エラー")
-                  ? "text-red-600"
-                  : "text-emerald-600"
-              }`}
+      <section className="card space-y-3">
+        <h2 className="section-title">🔐 管理者認証</h2>
+        {isAdmin ? (
+          <div className="rounded-xl bg-emerald-50 px-3 py-2.5 text-sm font-semibold text-emerald-700">
+            ✅ 管理者モード有効です
+            <p className="mt-1 text-[11px] font-normal text-ink-500">
+              イベント作成・編集・削除が制限なく行えます
+            </p>
+          </div>
+        ) : (
+          <>
+            <p className="text-xs leading-relaxed text-ink-600">
+              イベント作成・編集・削除・卓組変更は管理者認証が必要です。
+              まずメインのパスワード（kawasaki）で入室してから、管理者パスワードを入力してください。
+            </p>
+            <button
+              onClick={() => setAdminPromptOpen(true)}
+              className="btn-primary w-full"
             >
-              {syncResult}
+              🔐 管理者ログイン
+            </button>
+          </>
+        )}
+      </section>
+
+      {isAdmin && (
+        <section
+          className={`card space-y-3 ${
+            supabaseReady
+              ? "border-brand-200 bg-brand-50/50"
+              : "border-amber-200 bg-amber-50/50"
+          }`}
+        >
+          <h2 className="section-title">☁️ クラウド反映</h2>
+          {supabaseReady ? (
+            <>
+              <p className="text-xs leading-relaxed text-ink-600">
+                ローカル（IndexedDB）にある全データを Supabase にアップロードします。
+                既存データは上書きされます。
+              </p>
+              <button
+                onClick={doSync}
+                disabled={syncing}
+                className="btn-primary w-full"
+              >
+                {syncing ? "反映中…" : "☁️ 全データをクラウドに反映"}
+              </button>
+              {syncResult && (
+                <p
+                  className={`text-xs font-semibold ${
+                    syncResult.startsWith("エラー")
+                      ? "text-red-600"
+                      : "text-emerald-600"
+                  }`}
+                >
+                  {syncResult}
+                </p>
+              )}
+            </>
+          ) : (
+            <p className="text-xs leading-relaxed text-amber-800">
+              ⚠️ Supabase の環境変数が設定されていません。
+              Vercel の Environment Variables で
+              <code className="mx-1 rounded bg-amber-100 px-1">NEXT_PUBLIC_SUPABASE_URL</code> と
+              <code className="mx-1 rounded bg-amber-100 px-1">NEXT_PUBLIC_SUPABASE_ANON_KEY</code>
+              を設定してください。
             </p>
           )}
         </section>
@@ -92,21 +137,28 @@ export default function SettingsPage() {
           </li>
           <li>
             イベント詳細画面で
-            <span className="font-bold">卓組</span>（自動抽選・同卓回避）・
-            <span className="font-bold">点数入力</span>（手動 ×100、3人入力で4人目自動）・
-            <span className="font-bold">順位</span>（MP/金額ランキング）を確認
+            <span className="font-bold">点数入力</span>（手動 ×100、3人入力で4人目自動）でスコアを記録
           </li>
         </ol>
       </section>
 
       <section className="card space-y-2">
-        <h2 className="section-title">注意事項</h2>
+        <h2 className="section-title">権限について</h2>
         <ul className="list-disc space-y-1 pl-5 text-xs text-ink-500">
-          <li>ブラウザのキャッシュを消去するとローカルデータは削除されますが、クラウド上のデータは保持されます</li>
-          <li>複数端末間の同期は自動で行われます（Supabase に接続されている場合）</li>
-          <li>Supabase 未接続時はローカル（IndexedDB）のみで動作します</li>
+          <li>メイン入室パスワード: <code>kawasaki</code>（グループ全員で共有）</li>
+          <li>管理者パスワード: <code>tomo1029</code>（イベント作成・編集・削除用）</li>
+          <li>点数入力は誰でも可能です</li>
         </ul>
       </section>
+
+      {adminPromptOpen && (
+        <AdminPrompt
+          onClose={() => setAdminPromptOpen(false)}
+          onSuccess={() => setAdminPromptOpen(false)}
+          title="管理者認証"
+          message="管理者パスワードを入力してください。"
+        />
+      )}
       {adminGate}
     </div>
   );
