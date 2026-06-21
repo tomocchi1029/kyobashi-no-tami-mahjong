@@ -2,12 +2,14 @@
 
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/lib/db";
 import { defaultConfig, uid, type EventConfig } from "@/lib/types";
 import { generateRounds } from "@/lib/tableGenerator";
 import { createEvent } from "@/lib/dataService";
+import { useAdminAction } from "@/lib/useAdminAction";
+import { useAuth } from "@/lib/auth";
 import ConfigEditor from "@/components/ConfigEditor";
 
 export default function NewEventPage() {
@@ -23,6 +25,8 @@ export default function NewEventPage() {
   const [config, setConfig] = useState<EventConfig>(defaultConfig());
   const [numberOfRounds, setNumberOfRounds] = useState(1);
   const [submitting, setSubmitting] = useState(false);
+
+  const { requireAdmin, adminGate } = useAdminAction();
 
   function toggle(id: string) {
     setSelected((prev) => {
@@ -45,6 +49,29 @@ export default function NewEventPage() {
   }
 
   const canCreate = name.trim().length > 0 && selected.size >= config.tableSize;
+
+  const { isAdmin } = useAuth();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  if (mounted && !isAdmin) {
+    return (
+      <>
+        <div className="card text-center text-sm text-ink-500">
+          <div className="text-4xl">🔐</div>
+          <p className="mt-3 font-semibold text-ink-800">管理者認証が必要です</p>
+          <p className="mt-1 text-xs">イベントの作成は管理者のみが行えます</p>
+          <button
+            onClick={() => requireAdmin(() => setMounted(true))}
+            className="btn-primary mt-4"
+          >
+            管理者認証
+          </button>
+        </div>
+        {adminGate}
+      </>
+    );
+  }
 
   return (
     <div className="space-y-5 pb-32">
@@ -147,7 +174,7 @@ export default function NewEventPage() {
       <div className="fixed inset-x-0 bottom-0 z-30 border-t border-ink-200/60 bg-white/90 px-4 pb-[env(safe-area-inset-bottom,1rem)] pt-3 shadow-lift backdrop-blur-md">
         <div className="mx-auto max-w-3xl">
           <button
-            onClick={create}
+            onClick={() => requireAdmin(create)}
             disabled={!canCreate || submitting}
             className="btn-primary w-full py-3.5 text-base"
           >
@@ -160,6 +187,7 @@ export default function NewEventPage() {
           )}
         </div>
       </div>
+      {adminGate}
     </div>
   );
 }

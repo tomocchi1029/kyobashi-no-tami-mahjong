@@ -9,9 +9,10 @@ import { generateRounds, regenerateRound, deleteRound } from "@/lib/tableGenerat
 interface Props {
   event: MahjongEvent;
   playersMap: Map<string, Player>;
+  requireAdmin: (action: () => void) => void;
 }
 
-export default function RoundTablesView({ event, playersMap }: Props) {
+export default function RoundTablesView({ event, playersMap, requireAdmin }: Props) {
   const rounds = useLiveQuery(
     () => db.rounds.where("eventId").equals(event.id).sortBy("index"),
     [event.id],
@@ -74,7 +75,7 @@ export default function RoundTablesView({ event, playersMap }: Props) {
         </div>
         <button
           className="btn-primary w-full"
-          onClick={add}
+            onClick={() => requireAdmin(add)}
           disabled={event.playerIds.length < event.config.tableSize}
         >
           ＋ 回戦を追加
@@ -108,13 +109,13 @@ export default function RoundTablesView({ event, playersMap }: Props) {
                 </h2>
                 <div className="flex gap-1">
                   <button
-                    onClick={() => regen(round.id)}
+                    onClick={() => requireAdmin(() => regen(round.id))}
                     className="rounded-full px-3 py-1.5 text-xs font-semibold text-brand-600 active:bg-brand-50"
                   >
                     ↻ 再抽選
                   </button>
                   <button
-                    onClick={() => remove(round.id)}
+                    onClick={() => requireAdmin(() => remove(round.id))}
                     className="rounded-full px-3 py-1.5 text-xs font-semibold text-red-500 active:bg-red-50"
                   >
                     削除

@@ -235,3 +235,67 @@ export async function syncAllFromSupabase(): Promise<void> {
     }
   });
 }
+
+// ── Bulk push: local IndexedDB → Supabase ──
+
+export async function pushAllToCloud(): Promise<{
+  players: number;
+  events: number;
+  rounds: number;
+  tables: number;
+}> {
+  const supabase = getSupabase();
+  if (!supabase) throw new Error("Supabase が設定されていません。");
+
+  const [players, events, rounds, tables] = await Promise.all([
+    db.players.toArray(),
+    db.events.toArray(),
+    db.rounds.toArray(),
+    db.gameTables.toArray(),
+  ]);
+
+  if (players.length) {
+    await dbBatchInsert("players", players as unknown[]);
+  }
+  if (events.length) {
+    const mapped = events.map((e) => ({
+      id: e.id,
+      name: e.name,
+      created_at: new Date(e.createdAt).toISOString(),
+      config: JSON.stringify(e.config),
+      player_ids: e.playerIds,
+    }));
+    await dbBatchInsert("events", mapped as unknown[]);
+  }
+  if (rounds.length) {
+    const mapped = rounds.map((r) => ({
+      id: r.id,
+      event_id: r.eventId,
+      index: r.index,
+      created_at: new Date(r.createdAt).toISOString(),
+      rest_player_ids: r.restPlayerIds,
+    }));
+    await dbBatchInsert("rounds", mapped as unknown[]);
+  }
+  if (tables.length) {
+    const mapped = tables.map((t) => ({
+      id: t.id,
+      event_id: t.eventId,
+      round_id: t.roundId,
+      table_number: t.tableNumber,
+      player_ids: t.playerIds,
+      raw_scores: t.rawScores,
+      chip_counts: t.chipCounts,
+      score_entered: t.scoreEntered,
+      created_at: new Date(t.createdAt).toISOString(),
+    }));
+    await dbBatchInsert("game_tables", mapped as unknown[]);
+  }
+
+  return {
+    players: players.length,
+    events: events.length,
+    rounds: rounds.length,
+    tables: tables.length,
+  };
+}

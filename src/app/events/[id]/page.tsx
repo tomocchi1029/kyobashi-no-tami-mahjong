@@ -6,13 +6,15 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { db } from "@/lib/db";
 import type { Player } from "@/lib/types";
+import { useAuth } from "@/lib/auth";
+import { useAdminAction } from "@/lib/useAdminAction";
 import RoundTablesView from "@/components/event/RoundTablesView";
 import ScoreInputView from "@/components/event/ScoreInputView";
 import RankingView from "@/components/event/RankingView";
 
 type Tab = "tables" | "scores" | "ranking";
 
-const TABS: [Tab, string, string][] = [
+const ALL_TABS: [Tab, string, string][] = [
   ["tables", "卓組", "🎲"],
   ["scores", "点数入力", "✏️"],
   ["ranking", "順位", "🏆"],
@@ -22,8 +24,11 @@ export default function EventDetailPage() {
   const params = useParams<{ id: string }>();
   const id = params.id;
   const router = useRouter();
-  const [tab, setTab] = useState<Tab>("tables");
+  const [tab, setTab] = useState<Tab>("scores");
   const [mounted, setMounted] = useState(false);
+
+  const { isAdmin } = useAuth();
+  const { requireAdmin, adminGate } = useAdminAction();
 
   const event = useLiveQuery(() => db.events.get(id), [id]);
   const players = useLiveQuery(
@@ -43,6 +48,16 @@ export default function EventDetailPage() {
   );
 
   useEffect(() => setMounted(true), []);
+
+  // Filter visible tabs based on admin status
+  const visibleTabs = isAdmin
+    ? ALL_TABS
+    : ALL_TABS.filter(([k]) => k !== "tables");
+
+  // If not admin and somehow on tables tab, switch to scores
+  useEffect(() => {
+    if (!isAdmin && tab === "tables") setTab("scores");
+  }, [isAdmin, tab]);
 
   if (!mounted || event === undefined) {
     return (
@@ -83,13 +98,15 @@ export default function EventDetailPage() {
           <h1 className="text-xl font-extrabold tracking-tight text-ink-900">
             {event.name}
           </h1>
-          <Link
-            href={`/events/${event.id}/settings`}
-            className="btn-secondary shrink-0 px-3 py-2"
-            aria-label="ルール設定"
-          >
-            ⚙️ <span className="hidden sm:inline">ルール</span>
-          </Link>
+          {isAdmin && (
+            <Link
+              href={`/events/${event.id}/settings`}
+              className="btn-secondary shrink-0 px-3 py-2"
+              aria-label="ルール設定"
+            >
+              ⚙️ <span className="hidden sm:inline">ルール</span>
+            </Link>
+          )}
         </div>
         <div className="flex flex-wrap gap-1.5 text-[11px]">
           <span className="chip">👥 {event.playerIds.length}人</span>
@@ -115,7 +132,7 @@ export default function EventDetailPage() {
 
       <div className="sticky top-[60px] z-10 -mx-1 rounded-2xl bg-white/70 p-1 shadow-soft backdrop-blur-md">
         <div className="flex gap-1">
-          {TABS.map(([key, label, icon]) => {
+          {visibleTabs.map(([key, label, icon]) => {
             const active = tab === key;
             return (
               <button
@@ -135,8 +152,8 @@ export default function EventDetailPage() {
         </div>
       </div>
 
-      {tab === "tables" && (
-        <RoundTablesView event={event} playersMap={playersMap} />
+      {tab === "tables" && isAdmin && (
+        <RoundTablesView event={event} playersMap={playersMap} requireAdmin={requireAdmin} />
       )}
       {tab === "scores" && (
         <ScoreInputView event={event} playersMap={playersMap} />
@@ -144,6 +161,7 @@ export default function EventDetailPage() {
       {tab === "ranking" && (
         <RankingView event={event} playersMap={playersMap} />
       )}
+      {adminGate}
     </div>
   );
 }

@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/lib/db";
 import { createPlayer, deletePlayer, updatePlayer } from "@/lib/dataService";
+import { useAdminAction } from "@/lib/useAdminAction";
+import { useAuth } from "@/lib/auth";
 
 const MAX_PLAYERS = 30;
 
@@ -18,6 +20,9 @@ export default function PlayersPage() {
   const [newName, setNewName] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
+
+  const { requireAdmin, adminGate } = useAdminAction();
+  const { isAdmin } = useAuth();
 
   const gameCount = new Map<string, number>();
   for (const t of tables) {
@@ -68,33 +73,48 @@ export default function PlayersPage() {
         <p className="text-xs text-ink-500">{players.length}/{MAX_PLAYERS}人</p>
       </div>
 
-      <section className="card space-y-3">
-        <div className="flex gap-2">
-          <input
-            className="input flex-1"
-            placeholder="選手名を入力"
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") add();
-            }}
-          />
-          <button
-            className="btn-primary"
-            onClick={add}
-            disabled={!newName.trim() || players.length >= MAX_PLAYERS}
-          >
-            追加
-          </button>
-        </div>
-      </section>
+      {isAdmin ? (
+        <section className="card space-y-3">
+          <div className="flex gap-2">
+            <input
+              className="input flex-1"
+              placeholder="選手名を入力"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") add();
+              }}
+            />
+            <button
+              className="btn-primary"
+              onClick={add}
+              disabled={!newName.trim() || players.length >= MAX_PLAYERS}
+            >
+              追加
+            </button>
+          </div>
+        </section>
+      ) : (
+        <button
+          onClick={() => requireAdmin(() => {})}
+          className="card w-full text-left text-sm text-ink-500 active:scale-[0.99]"
+        >
+          <div className="flex items-center gap-2">
+            <span className="text-xl">🔐</span>
+            <span>
+              選手の追加・編集は <span className="font-bold text-ink-800">管理者認証</span> が必要です
+            </span>
+            <span className="ml-auto text-ink-300">›</span>
+          </div>
+        </button>
+      )}
 
       <section className="space-y-2">
         {players.length === 0 ? (
           <div className="card text-center text-sm text-ink-500">
             <div className="text-3xl">👥</div>
             <p className="mt-2">選手がいません</p>
-            <p className="text-xs">上から追加してください</p>
+            <p className="text-xs">管理者認証後に追加できます</p>
           </div>
         ) : (
           <ul className="space-y-2">
@@ -161,10 +181,7 @@ export default function PlayersPage() {
                     </div>
                   ) : (
                     <>
-                      <button
-                        onClick={() => startEdit(p.id, p.name)}
-                        className="flex-1 min-w-0 text-left active:opacity-60"
-                      >
+                      <div className="flex-1 min-w-0">
                         <div className="truncate font-semibold text-ink-900">
                           {p.name}
                         </div>
@@ -173,44 +190,48 @@ export default function PlayersPage() {
                             🎮 {g}戦
                           </div>
                         )}
-                      </button>
-                      <button
-                        onClick={() => startEdit(p.id, p.name)}
-                        className="rounded-full p-2 text-ink-300 hover:bg-ink-100 hover:text-ink-700"
-                        aria-label="編集"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          className="h-4 w-4"
-                        >
-                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                        </svg>
-                      </button>
-                      <button
-                        onClick={() => remove(p.id)}
-                        className="rounded-full p-2 text-ink-300 hover:bg-red-50 hover:text-red-500"
-                        aria-label="削除"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          className="h-4 w-4"
-                        >
-                          <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                        </svg>
-                      </button>
+                      </div>
+                      {isAdmin && (
+                        <>
+                          <button
+                            onClick={() => startEdit(p.id, p.name)}
+                            className="rounded-full p-2 text-ink-300 hover:bg-ink-100 hover:text-ink-700"
+                            aria-label="編集"
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              className="h-4 w-4"
+                            >
+                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => remove(p.id)}
+                            className="rounded-full p-2 text-ink-300 hover:bg-red-50 hover:text-red-500"
+                            aria-label="削除"
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              className="h-4 w-4"
+                            >
+                              <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                            </svg>
+                          </button>
+                        </>
+                      )}
                     </>
                   )}
                 </li>
@@ -219,6 +240,7 @@ export default function PlayersPage() {
           </ul>
         )}
       </section>
+      {adminGate}
     </div>
   );
 }

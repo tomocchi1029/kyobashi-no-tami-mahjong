@@ -1,11 +1,69 @@
 "use client";
 
+import { useState } from "react";
+import { useAuth } from "@/lib/auth";
+import { useAdminAction } from "@/lib/useAdminAction";
+import { pushAllToCloud } from "@/lib/dataService";
+import { isSupabaseConfigured } from "@/lib/supabase";
+
 export default function SettingsPage() {
+  const { isAdmin } = useAuth();
+  const { requireAdmin, adminGate } = useAdminAction();
+  const [syncing, setSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState<string | null>(null);
+
+  const supabaseReady = isSupabaseConfigured();
+
+  async function doSync() {
+    setSyncing(true);
+    setSyncResult(null);
+    try {
+      const result = await pushAllToCloud();
+      setSyncResult(
+        `完了: 選手 ${result.players}件 / イベント ${result.events}件 / 回戦 ${result.rounds}件 / 卓 ${result.tables}件`
+      );
+    } catch (e) {
+      setSyncResult(
+        `エラー: ${e instanceof Error ? e.message : "不明なエラー"}`
+      );
+    } finally {
+      setSyncing(false);
+    }
+  }
+
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-extrabold tracking-tight text-ink-900">
         設定
       </h1>
+
+      {isAdmin && supabaseReady && (
+        <section className="card space-y-3 border-brand-200 bg-brand-50/50">
+          <h2 className="section-title">☁️ クラウド反映</h2>
+          <p className="text-xs leading-relaxed text-ink-600">
+            ローカル（IndexedDB）にある全データを Supabase にアップロードします。
+            既存データは上書きされます。
+          </p>
+          <button
+            onClick={doSync}
+            disabled={syncing}
+            className="btn-primary w-full"
+          >
+            {syncing ? "反映中…" : "☁️ 全データをクラウドに反映"}
+          </button>
+          {syncResult && (
+            <p
+              className={`text-xs font-semibold ${
+                syncResult.startsWith("エラー")
+                  ? "text-red-600"
+                  : "text-emerald-600"
+              }`}
+            >
+              {syncResult}
+            </p>
+          )}
+        </section>
+      )}
 
       <section className="card space-y-2">
         <h2 className="section-title">アプリについて</h2>
@@ -49,6 +107,7 @@ export default function SettingsPage() {
           <li>Supabase 未接続時はローカル（IndexedDB）のみで動作します</li>
         </ul>
       </section>
+      {adminGate}
     </div>
   );
 }

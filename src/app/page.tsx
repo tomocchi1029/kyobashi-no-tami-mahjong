@@ -1,16 +1,23 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/lib/db";
 import { deleteEvent } from "@/lib/dataService";
+import { useAdminAction } from "@/lib/useAdminAction";
+import { useAuth } from "@/lib/auth";
 
 export default function EventsPage() {
+  const router = useRouter();
   const events = useLiveQuery(
     () => db.events.orderBy("createdAt").reverse().toArray(),
     [],
     []
   );
+  const { requireAdmin, adminGate } = useAdminAction();
+  const { isAdmin } = useAuth();
+
   const rounds = useLiveQuery(() => db.rounds.toArray(), [], []);
   const tables = useLiveQuery(() => db.gameTables.toArray(), [], []);
 
@@ -42,9 +49,18 @@ export default function EventsPage() {
             クラウド同期・複数端末で共有
           </p>
         </div>
-        <Link href="/events/new" className="btn-primary shadow-glow">
-          ＋ 新規
-        </Link>
+        {isAdmin ? (
+          <Link href="/events/new" className="btn-primary shadow-glow">
+            ＋ 新規
+          </Link>
+        ) : (
+          <button
+            onClick={() => requireAdmin(() => router.push("/events/new"))}
+            className="btn-primary shadow-glow"
+          >
+            🔐 ＋ 新規
+          </button>
+        )}
       </div>
 
       {events.length === 0 ? (
@@ -97,9 +113,10 @@ export default function EventsPage() {
                     </div>
                   )}
                 </Link>
-                <button
-                  onClick={() => handleDelete(ev.id)}
-                  className="absolute right-2 top-2 rounded-full p-2 text-ink-300 hover:bg-red-50 hover:text-red-500"
+                {isAdmin && (
+                  <button
+                    onClick={() => requireAdmin(() => handleDelete(ev.id))}
+                    className="absolute right-2 top-2 rounded-full p-2 text-ink-300 hover:bg-red-50 hover:text-red-500"
                   aria-label="削除"
                 >
                   <svg
@@ -115,11 +132,13 @@ export default function EventsPage() {
                     <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
                   </svg>
                 </button>
+                )}
               </li>
             );
           })}
         </ul>
       )}
+      {adminGate}
     </div>
   );
 }
