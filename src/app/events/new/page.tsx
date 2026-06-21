@@ -12,6 +12,12 @@ import { useAdminAction } from "@/lib/useAdminAction";
 import { useAuth } from "@/lib/auth";
 import ConfigEditor from "@/components/ConfigEditor";
 
+interface ScheduleDraft {
+  startsAt: number;
+  endsAt: number | null;
+  note: string;
+}
+
 export default function NewEventPage() {
   const router = useRouter();
   const players = useLiveQuery(
@@ -24,6 +30,7 @@ export default function NewEventPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [config, setConfig] = useState<EventConfig>(defaultConfig());
   const [numberOfRounds, setNumberOfRounds] = useState(1);
+  const [schedules, setSchedules] = useState<ScheduleDraft[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
   const { requireAdmin, adminGate } = useAdminAction();
@@ -37,12 +44,45 @@ export default function NewEventPage() {
     });
   }
 
+  function addSchedule() {
+    const now = new Date();
+    now.setSeconds(0, 0);
+    // デフォルトで次の1時間後を開始時刻に
+    const start = new Date(now.getTime() + 60 * 60 * 1000);
+    start.setMinutes(0, 0, 0);
+    const end = new Date(start.getTime() + 4 * 60 * 60 * 1000);
+    setSchedules((prev) => [
+      ...prev,
+      { startsAt: start.getTime(), endsAt: end.getTime(), note: "" },
+    ]);
+  }
+
+  function removeSchedule(index: number) {
+    setSchedules((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  function updateSchedule(index: number, patch: Partial<ScheduleDraft>) {
+    setSchedules((prev) =>
+      prev.map((s, i) => (i === index ? { ...s, ...patch } : s))
+    );
+  }
+
   async function create() {
     const trimmed = name.trim();
     if (!trimmed || selected.size < config.tableSize) return;
     setSubmitting(true);
     const id = uid();
-    await createEvent(id, trimmed, config, [...selected]);
+    await createEvent(
+      id,
+      trimmed,
+      config,
+      [...selected],
+      schedules.map((s) => ({
+        startsAt: s.startsAt,
+        endsAt: s.endsAt,
+        note: s.note,
+      }))
+    );
     await generateRounds(id, [...selected], config, numberOfRounds);
     setSubmitting(false);
     router.push(`/events/${id}`);

@@ -2,6 +2,7 @@ export interface Player {
   id: string;
   name: string;
   createdAt: number;
+  updatedAt: number;
 }
 
 export interface EventConfig {
@@ -19,8 +20,19 @@ export interface MahjongEvent {
   id: string;
   name: string;
   createdAt: number;
+  updatedAt: number;
   config: EventConfig;
   playerIds: string[];
+}
+
+export interface EventSchedule {
+  id: string;
+  eventId: string;
+  startsAt: number;
+  endsAt: number | null;
+  note: string;
+  createdAt: number;
+  updatedAt: number;
 }
 
 export interface Round {
@@ -28,6 +40,7 @@ export interface Round {
   eventId: string;
   index: number;
   createdAt: number;
+  updatedAt: number;
   restPlayerIds: string[];
 }
 
@@ -41,6 +54,7 @@ export interface TableAssignment {
   chipCounts: number[];
   scoreEntered: boolean;
   createdAt: number;
+  updatedAt: number;
 }
 
 export interface PlayerRoundResult {

@@ -160,6 +160,7 @@ function buildTableRecords(
   groups: string[][],
   config: EventConfig
 ): TableAssignment[] {
+  const now = Date.now();
   return groups.map((pids, i) => ({
     id: uid(),
     eventId,
@@ -169,7 +170,8 @@ function buildTableRecords(
     rawScores: pids.map(() => config.startingPoints),
     chipCounts: pids.map(() => 0),
     scoreEntered: false,
-    createdAt: Date.now(),
+    createdAt: now,
+    updatedAt: now,
   }));
 }
 
@@ -195,13 +197,15 @@ export async function generateRounds(
   for (let offset = 0; offset < numberOfRounds; offset++) {
     const roundIndex = startIndex + offset;
     const roundId = uid();
+    const now = Date.now();
     const order = fairShuffle([...playerIds], pairingCounts, config.tableSize, config.allowThreePlayerTable);
     const { tables, rest } = splitIntoTables(order, config);
     const round: Round = {
       id: roundId,
       eventId,
       index: roundIndex,
-      createdAt: Date.now(),
+      createdAt: now,
+      updatedAt: now,
       restPlayerIds: rest,
     };
     const tableRecords = buildTableRecords(eventId, roundId, tables, config);

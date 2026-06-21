@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 import { useAuth } from "@/lib/auth";
+import { isSupabaseConfigured } from "@/lib/supabase";
 
 const ITEMS = [
   { href: "/", label: "イベント", icon: "🏟️" },
@@ -12,18 +14,29 @@ const ITEMS = [
 
 export default function Nav() {
   const pathname = usePathname();
-  const { isAdmin, exitAdmin } = useAuth();
+  const { isAdmin, exitAdmin, triggerSync, isSyncing, lastSyncedAt } = useAuth();
+  const [syncFlash, setSyncFlash] = useState(false);
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href);
 
+  const supabaseReady = isSupabaseConfigured();
+
+  async function handleSync() {
+    if (isSyncing) return;
+    setSyncFlash(false);
+    await triggerSync();
+    setSyncFlash(true);
+    setTimeout(() => setSyncFlash(false), 1500);
+  }
+
   return (
     <header className="sticky top-0 z-20 border-b border-ink-200/60 bg-white/85 shadow-soft backdrop-blur-md">
-      <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3">
+      <div className="mx-auto flex max-w-3xl items-center justify-between gap-2 px-4 py-3">
         <Link href="/" className="flex items-center gap-2 text-base font-extrabold tracking-tight text-ink-900">
           <span className="text-xl">🀄</span>
-          <span>京橋の民</span>
+          <span className="hidden sm:inline">京橋の民</span>
         </Link>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           {isAdmin && (
             <button
               onClick={() => {
@@ -33,6 +46,26 @@ export default function Nav() {
               title="タップで管理者モード解除"
             >
               🔓 管理者
+            </button>
+          )}
+          {supabaseReady && (
+            <button
+              onClick={handleSync}
+              disabled={isSyncing}
+              className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold active:scale-95 disabled:opacity-60 ${
+                syncFlash
+                  ? "bg-emerald-100 text-emerald-700"
+                  : "bg-brand-50 text-brand-700"
+              }`}
+              title="クラウドから同期"
+            >
+              {isSyncing ? (
+                <>⏳ 同期中…</>
+              ) : syncFlash ? (
+                <>✅ 同期済み</>
+              ) : (
+                <>☁️ 同期</>
+              )}
             </button>
           )}
           <nav className="flex items-center gap-1">

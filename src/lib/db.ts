@@ -1,19 +1,21 @@
 import Dexie, { type Table } from "dexie";
-import type { Player, MahjongEvent, Round, TableAssignment } from "./types";
+import type { Player, MahjongEvent, Round, TableAssignment, EventSchedule } from "./types";
 
 export class MahjongDB extends Dexie {
   players!: Table<Player, string>;
   events!: Table<MahjongEvent, string>;
+  eventSchedules!: Table<EventSchedule, string>;
   rounds!: Table<Round, string>;
   gameTables!: Table<TableAssignment, string>;
 
   constructor() {
     super("MahjongScoreRecord");
-    this.version(1).stores({
-      players: "id, name, createdAt",
-      events: "id, name, createdAt",
-      rounds: "id, eventId, index",
-      gameTables: "id, eventId, roundId, tableNumber",
+    this.version(3).stores({
+      players: "id, name, createdAt, updatedAt",
+      events: "id, name, createdAt, updatedAt",
+      eventSchedules: "id, eventId, startsAt, updatedAt",
+      rounds: "id, eventId, index, updatedAt",
+      gameTables: "id, eventId, roundId, tableNumber, updatedAt",
     });
   }
 }

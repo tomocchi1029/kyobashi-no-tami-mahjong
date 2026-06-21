@@ -142,15 +142,6 @@ export default function SettingsPage() {
         </ol>
       </section>
 
-      <section className="card space-y-2">
-        <h2 className="section-title">権限について</h2>
-        <ul className="list-disc space-y-1 pl-5 text-xs text-ink-500">
-          <li>メイン入室パスワード: <code>kawasaki</code>（グループ全員で共有）</li>
-          <li>管理者パスワード: <code>tomo1029</code>（イベント作成・編集・削除用）</li>
-          <li>点数入力は誰でも可能です</li>
-        </ul>
-      </section>
-
       {adminPromptOpen && (
         <AdminPrompt
           onClose={() => setAdminPromptOpen(false)}
