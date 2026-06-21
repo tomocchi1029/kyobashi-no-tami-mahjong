@@ -167,7 +167,7 @@ function buildTableRecords(
     roundId,
     tableNumber: i + 1,
     playerIds: pids,
-    rawScores: pids.map(() => config.startingPoints),
+    rawScores: pids.map(() => 0),
     chipCounts: pids.map(() => 0),
     scoreEntered: false,
     createdAt: now,

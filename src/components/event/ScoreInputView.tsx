@@ -99,7 +99,7 @@ function ScoreInputSection({
   config: EventConfig;
 }) {
   const [scores, setScores] = useState<string[]>(
-    table.rawScores.map((s) => String(s / 100))
+    table.rawScores.map((s) => (s > 0 ? String(s / 100) : ""))
   );
   const [chips, setChips] = useState<string[]>(
     table.chipCounts.map(String)
@@ -115,7 +115,7 @@ function ScoreInputSection({
     if (savedSig !== prevSig.current) {
       prevSig.current = savedSig;
       if (!dirty) {
-        setScores(table.rawScores.map((s) => String(s / 100)));
+        setScores(table.rawScores.map((s) => (s > 0 ? String(s / 100) : "")));
         setChips(table.chipCounts.map(String));
       }
     }
